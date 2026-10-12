@@ -1,0 +1,39 @@
+name: reactive_resume_baseline
+
+services:
+  postgres:
+    image: postgres:18.3-alpine
+    environment:
+      POSTGRES_DB: reactive_resume_baseline
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "127.0.0.1:55431:5432"
+    volumes:
+      - baseline_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d reactive_resume_baseline"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  postgres_e2e:
+    image: postgres:18.3-alpine
+    profiles: ["test"]
+    environment:
+      POSTGRES_DB: reactive_resume_baseline_e2e
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "127.0.0.1:55433:5432"
+    volumes:
+      - baseline_e2e_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d reactive_resume_baseline_e2e"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  baseline_postgres_data:
+  baseline_e2e_postgres_data:
