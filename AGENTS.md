@@ -39,6 +39,67 @@ This block is written and re-added by `turbo` before repository-scoped commands 
 - Check `git status --short` before editing. Preserve unrelated changes, including existing edits in this file.
 - Use scripts and configuration as the source of truth when documentation disagrees with them.
 
+## Chinese AI Resume: mandatory feature delivery workflow
+
+This fork's Chinese AI resume and VIP development must follow this section in every session. Keep the upstream architecture, security, formatting, and testing rules below. The human user's current instructions take precedence.
+
+Canonical project records:
+
+- Development scope, feature contracts, dependencies, and acceptance criteria: [development plan](docs/plans/chinese-ai-resume-development.plan.md).
+- Feature status, assigned branch, PR URL, validation evidence, and blockers: [feature tracker](docs/plans/chinese-ai-resume-feature-tracker.md).
+- Product positioning, suggested VIP pricing, merchant onboarding, and public-launch prerequisites: [launch plan](docs/plans/chinese-ai-resume-vip-launch.plan.md).
+- Product repository: `ryan-deng98/reactive-resume` on `origin`. `upstream` is the original open-source project, not the destination for product feature PRs.
+
+### Start and resume each session
+
+1. Read this file, closer instructions, the development plan, and the tracker before implementation. Check `git status --short`, the current branch, and Git remotes; preserve unrelated changes.
+2. Reconcile the selected feature's existing branch, PR, latest checks, and dependency merge state with GitHub. Reuse an existing feature branch/PR instead of creating a duplicate. A previous session's "done" message is not proof of a merge.
+3. If the user names a feature, work on that feature. Otherwise, when implementation is authorized, select the next `P0` feature whose dependencies are merged into `origin/dev`; follow the plan's recommended order. Planning-only requests do not authorize implementing the whole backlog.
+4. Record the feature ID, scope, acceptance criteria, branch, and status before coding. If dependencies are unmerged, work on another ready feature within the authorized scope or report the dependency; do not silently import unrelated feature commits.
+
+### One feature, one branch, one PR
+
+- Every feature uses its tracker branch: `codex/feature/fNNN-short-name`. The `codex/` prefix follows this environment's branch convention; each branch is still a feature branch.
+- Create the branch only when starting that feature, from freshly fetched `origin/dev`. Never pre-create all backlog branches, develop directly on `main`/`dev`, or target `main`/`upstream` with a product feature PR.
+- `dev` is the integration branch; `main` is the release branch. Initial creation of `dev` from verified `origin/main` is the sole bootstrap exception to the no-direct-push rule. Subsequent changes enter `dev` through PRs.
+- Keep changes within one feature's behavior and necessary tests, migrations, translations, docs, and tracker updates. If a second independently deliverable feature is needed, register it separately before implementation. Do not hide unrelated work in a feature PR.
+- A feature PR must be independently reviewable against `dev`. Do not use another unmerged feature branch as the base or create stacked PRs unless the user explicitly requests that exception.
+- Update the feature branch from `origin/dev` before final validation; resolve conflicts without overwriting unrelated work. Never force-push shared branches. After integration changes, rerun affected checks.
+- Use Conventional Commits. Push the feature branch and open one PR with explicit `--repo ryan-deng98/reactive-resume --base dev --head <feature-branch>`.
+- A PR does not authorize a merge. Do not merge PRs, enable auto-merge, change branch protection, publish a release, deploy production, or activate real charging without the user's authorization for that action.
+
+### Required validation and PR handoff
+
+- Every implementation feature includes its own meaningful behavior tests where warranted. Payment, ownership, VIP periods, quotas, concurrency, retries, refunds, and data handling require tests in the same PR; do not postpone those tests to the final E2E feature.
+- Follow the existing lint/format rules. Run relevant package typechecks/tests, `pnpm lint:agent`, and `pnpm format:check`; run boundaries for contract/export/import changes, production build for runtime/bundling changes, and browser checks for affected critical flows.
+- Documentation-only features require formatting, diff/whitespace, link/path, and tracker/dependency consistency checks; application tests/build are not required for documentation alone. If root scripts cannot run, record the exact reason and any equivalent scoped checks rather than claiming they passed.
+- Fix diagnostics without disabling rules or skipping hooks merely to submit a PR. Preserve existing baseline failures as documented blockers, not invented successful results.
+- A ready-for-review PR requires completed acceptance criteria and passing applicable local checks. If environment/dependency/CI blockers remain, open or retain a **draft** PR, record the blocker, and leave the feature incomplete.
+- PR descriptions state the feature ID, user-visible behavior, scope, dependencies, checks actually run, migration/rollback implications, and remaining blockers. Link a feature issue when one exists; do not create upstream issues for this fork's product backlog. No AI attribution or session links.
+- After creating any PR, attach its URL to this chat with `attach_artifact`, and record its URL in the tracker on the same feature branch. Commit/push that tracker update and inspect checks for the latest head commit.
+
+### State and completion rules
+
+Allowed tracker statuses: `planned`, `in_progress`, `blocked`, `draft_pr`, `pr_open`, `merged`, `cancelled`.
+
+- `in_progress`: implementation started on the assigned branch.
+- `draft_pr`: a draft exists or required validation is incomplete; include its PR URL and blocker.
+- `pr_open`: a non-draft PR exists with required acceptance/local checks complete; record current CI separately, including pending or failed checks.
+- `merged`: GitHub confirms the PR merged into `dev`; record PR URL, merge commit, and validation evidence. Only this state satisfies another feature's dependency. A pushed branch, approved review, open PR, or passing tests alone do not mean merged.
+- `blocked`: missing dependency, permission, resource, or external approval prevents feature progress; specify the next action and owner. Prefer `draft_pr` with a blocker if a draft PR already exists.
+- `cancelled`: the user explicitly removed the feature; preserve the reason and historical links.
+- Never mark a feature implemented/merged before its required work is complete. Keep a feature's code and acceptance evidence together; an integration/release PR cannot substitute for missing feature PRs.
+
+Before ending an implementation session, update the tracker with branch/PR, checks and result, blocker/next action, and changed scope. Report what was implemented, PR target and URL, tests actually run, and what remains. If a completed feature PR needs only human review/merge, hand it off and do not start dependent work as though it already merged.
+
+### Product and launch boundaries
+
+- VIP is server-enforced entitlement plus a durable credit ledger, not a browser flag. Every platform-funded model entry point, including API/MCP/background jobs, must use the same policy or be disabled server-side.
+- Prices, entitlement periods, and credit amounts come from server-side SKU snapshots. Validate official payment notifications, persist grants atomically/idempotently, and maintain reconciliation/refund audit history.
+- Keep personal resume data and credentials out of logs, fixtures, issues, and PRs. Use synthetic or authorized de-identified test data and isolated test databases/providers.
+- Merchant/website/AI application approvals, public-facing content disclosures, real transactions, and production activation are external launch gates. A feature PR can be merged behind disabled flags while those gates remain pending; do not call the product publicly launched or start charging merely because code is merged.
+- Product tests must not pay real merchants or call paid production models. Use deterministic AI stubs and signed payment fixtures; an explicitly authorized real smoke test is a separate step.
+
 ## Overview
 
 Reactive Resume is a free, open-source resume builder for creating, importing, exporting, and sharing resumes, cover letters, and job applications. It is a TypeScript pnpm monorepo managed by Turborepo, with two apps: `apps/web` (React 19 SPA with TanStack Router, TanStack Query, Tailwind CSS, and Vite) and `apps/server` (Hono / Node.js). oRPC connects browser workflows to server business logic; Better Auth handles authentication; Drizzle accesses PostgreSQL. Forme renders PDFs in the browser and on the server.
