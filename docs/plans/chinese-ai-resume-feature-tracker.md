@@ -10,8 +10,8 @@
 
 | ID   | 模块 | 优先级 | 功能                   | 分支                                        | 依赖                                                   | 状态    | PR / 合并提交 |
 | ---- | ---- | ------ | ---------------------- | ------------------------------------------- | ------------------------------------------------------ | ------- | ------------- |
-| F000 | M00  | P0     | 流程与开发计划         | `codex/feature/f000-development-workflow`   | —                                                      | pr_open | [#1][f000-pr] |
-| F001 | M00  | P0     | 本地运行基线           | `codex/feature/f001-runtime-baseline`       | F000                                                   | planned | —             |
+| F000 | M00  | P0     | 流程与开发计划         | `codex/feature/f000-development-workflow`   | —                                                      | merged  | [#1][f000-pr] |
+| F001 | M00  | P0     | 本地运行基线           | `codex/feature/f001-runtime-baseline`       | F000                                                   | pr_open | [#2][f001-pr] |
 | F002 | M00  | P0     | dev CI 集成            | `codex/feature/f002-dev-ci`                 | F001                                                   | planned | —             |
 | F003 | M01  | P0     | 品牌与中文首页         | `codex/feature/f003-brand-homepage`         | F001                                                   | planned | —             |
 | F004 | M01  | P0     | 默认简体中文           | `codex/feature/f004-zh-cn-defaults`         | F001                                                   | planned | —             |
@@ -62,15 +62,31 @@
 
 ### F000 — 流程与开发计划
 
-- 状态：pr_open；分支：`codex/feature/f000-development-workflow`；目标：`dev`。
+- 状态：merged；分支：`codex/feature/f000-development-workflow`；目标：`dev`。
 - 范围：三个规划文件与 AGENTS.md 强制交付流程；dev 已从核对的 main 基线建立。
-- PR：[#1 — 开发流程与计划](https://github.com/ryan-deng98/reactive-resume/pull/1)，已确认 `OPEN`、非草稿、base=`dev`，已附加到当前 chat。
+- PR：[#1 — 开发流程与计划](https://github.com/ryan-deng98/reactive-resume/pull/1)，GitHub 已确认合并到 `dev`。
 - 检查：47 个 ID/分支唯一；11 个模块；34 个 P0；计划与 tracker 的分支/依赖一致；依赖图无环、B0–B5 顺序可执行；本地相对链接与 Markdown fences 检查通过。Oxfmt 0.72.0 已按仓库配置格式化，提交前复查；`git diff --check` 通过。
 - 根脚本：尝试 `pnpm lint:agent`、`pnpm format:check`，均被 pnpm 自管理版本的目录权限阻止（`EPERM`，`~/Library/pnpm/.tools`）。文档格式使用临时缓存内锁定的 Oxfmt 0.72.0 等效检查；本次无 JavaScript/TypeScript 变更，Oxlint 代码检查不适用。
 - 应用测试/构建：仅文档变更，不适用；现有项目依赖尚未安装。
 - CI：GitHub 暂未返回检查结果，workflow 列表查询为空；不能标记 CI 通过。F002 必须核验并建立 dev 的实际检查流程；本次文档验收已有独立本地证据。
-- 下一步：审查并授权合并 F000；确认已并入 dev 后，才启动 F001。后续功能分支按最新 dev 逐个创建，未提前创建其余 46 个分支。
-- 合并证据：无。不得将 F000 视为 merged。
+- 下一步：F001 已从最新 `origin/dev` 启动。后续功能分支按最新 dev 逐个创建，未提前创建其余 46 个分支。
+- 合并证据：GitHub PR #1 于 2026-10-12 合并；merge commit：`804005f0987328a66ca95caa09821b31d59214c6`。
+
+### F001 — 本地运行基线
+
+- 状态：pr_open；分支：`codex/feature/f001-runtime-baseline`；目标：`dev`。
+- PR：[#2 — 本地运行基线](https://github.com/ryan-deng98/reactive-resume/pull/2)，GitHub 已核对为 `OPEN`、非草稿、base=`dev`；已附加到当前 chat，尚未合并。
+- 验证提交：`2ff68b97153fd74735795aba7b5bf4c983ceb7f4`；后续交接提交仅更新本跟踪表，文档格式/diff 重新检查。
+- 范围：Node 24.21.0 / pnpm 12.11.2 冻结锁文件安装；新增 `compose.baseline.yml` 隔离开发/测试数据库和本地存储；新增本机 Chrome 可选 Playwright 配置；[运行指南](../development/chinese-ai-resume-baseline.md)记录配置、验证及缺陷。AGENTS.md pnpm 版本已同步；无应用业务代码、迁移、依赖升级。
+- 验收：登录、简历编辑、保存、PDF 导出与一次生产构建；依赖 F000 已确认合并。
+- 检查：`pnpm install --frozen-lockfile`、显式注入 `.env.baseline-e2e` 的 `pnpm build`（3 个任务）、`pnpm typecheck`（19 个包）、`pnpm lint:agent`、`pnpm format:check`、`pnpm exec turbo boundaries`、Compose config、`git diff --check` 通过。开发首页/API 200，DB/本地存储健康。
+- API 单测：`pnpm exec dotenvx run -f .env.baseline-e2e -- pnpm --filter @reactive-resume/api test`，382 passed / 68 skipped；4 个额外 DB suite 未配置专用变量而跳过，未将其计作通过。
+- 浏览器：使用 `playwright.system-chrome.config.ts` 和 Chrome 154.0.8037.98，首轮 auth/section-editing/builder-save-navigation/pdf-text 6 项中 5 项通过，auth 因缺少录像 ffmpeg 失败；补齐 ffmpeg 1013 后单独重跑 auth，1 项通过。6 项核心场景均已验收，原断言与失败证据设置保留。
+- 环境发现：系统 Node 26 / pnpm 原生入口未完成安装，已使用临时目录的正确工具链解决；未修改系统链接。Chromium 156 下载已因低速停止，未宣称其通过。生产构建有两个现存非阻塞提示，详见指南。
+- CI：GitHub 当前 head 的 `statusCheckRollup`、check-runs 均为空，workflow 列表为空；不能标记 CI 通过。dev CI 属于 F002。
+- 发布：Git HTTPS push 连接超时，已用 GitHub Git Data API 发布同一提交；5 个 blob、完整 tree 与 commit SHA 均与本地一致，未强推。环境文件、凭据、数据与测试产物未提交。
+- 阻塞：应用验收无；等待 PR 审查/合并。配置撤回无需业务数据迁移；保留本地卷，不删除数据。
+- 下一步：审查并合并 F001 的 PR #2；GitHub 确认并入 dev 后，才从最新 dev 启动 F002。其余未合并依赖不能提前视为就绪。
 
 ## 新记录模板
 
@@ -92,3 +108,4 @@
 外部审批 X01–X07 的证据与状态单独维护在开发计划第 17 节；它们不等同于某个 feature PR 的 merged 状态。
 
 [f000-pr]: https://github.com/ryan-deng98/reactive-resume/pull/1
+[f001-pr]: https://github.com/ryan-deng98/reactive-resume/pull/2
